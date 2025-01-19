@@ -1,0 +1,133 @@
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://kit.fontawesome.com/8aa17a250d.js" crossorigin="anonymous"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Henny+Penny&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Red+Hat+Display:ital,wght@0,300..900;1,300..900&display=swap');
+  * { padding: 0; margin: 0; overflow-x: hidden; }
+  body { font-family: 'Red Hat Display'; }
+  #loader { display: none; align-items: center; justify-content: center; height: 100vh; }
+  .loader { width: 45px; aspect-ratio: 1; --c: no-repeat linear-gradient(#000 0 0); background: var(--c), var(--c), var(--c); animation: l18-1 1s infinite, l18-2 1s infinite; }
+  @keyframes l18-1 { 0%, 100% { background-size: 20% 100%; } 33%, 66% { background-size: 20% 20%; } }
+  @keyframes l18-2 { 0%, 33% { background-position: 0 0, 50% 50%, 100% 100%; } 66%, 100% { background-position: 100% 0, 50% 50%, 0 100%; } }
+  .search-container { display: none; }
+  .header { font-family: "Henny Penny", serif; }
+  .header img { width: 40px; height: 40px; border-radius: 50%; }
+  .header a { color: #000; font-size: 28px; }
+  .header { display: flex; align-items: center; justify-content: space-between; padding: 10px; }
+  .input { text-align: center; }
+  .input > input { width: 95%; padding: 10px 10px 10px 15px; border-radius: 25px; border: none; background: #d5d5d5; outline: none; }
+  .product img { width: 100px; }
+  .product{ display: flex; flex-direction: column; align-items: center; margin: 10px; width: calc(62% - 20%); box-sizing: border-box; text-align: center; padding: 10px; background: #c9c9c9; border-radius: 12px; }
+  .product-details h4 { width: 125px; text-overflow: ellipsis; white-space: nowrap; border-radius: 12px; }
+  .product-details { text-align: left; }
+  .add-to-cart { padding: 6px; border: none; margin: 5px 0px 0px 0px; width: 100%; border-radius: 25px; background: #000; font-size: 12px; color: #fff; font-family: 'Red Hat Display'; }
+  footer > a > img { width: 60px; border-radius: 50%; }
+  footer { position: fixed; bottom: 10px; right: 10px; overflow: hidden; }
+  #product-list{ display: flex; justify-content: center; flex-wrap: wrap; }
+</style>
+
+<div id="loader">
+  <div class="loader"></div>
+</div>
+
+<div class="search-container">
+  <div class="header">
+    <img src="https://placehold.jp/150x150.png">
+    <h2>App_Name</h2>
+    <a href="order.html"><i class="fa-solid fa-bag-shopping"></i></a>
+  </div>
+  <div class="input">
+  <input type="text" id="search-input" placeholder="Search..." />
+</div>
+<div id="product-list"></div>
+<footer>
+  <a href="https://wa.me/918987726266"><img src="https://cdn-icons-png.freepik.com/256/2496/2496112.png?semt=ais_hybrid"></a>
+</footer>
+</div>
+
+<script>
+  const DEPLOY_URL = 'https://script.google.com/macros/s/AKfycbzlmAqRBUUOGIK_nk5OO3DjiuyVjc9AY1Iym3mkqwEVRSFtqrgyTcF3peHWJ7qx4OHoBQ/exec';
+
+  let allProducts = [];
+
+  function showLoader() {
+    document.getElementById('loader').style.display = 'flex';
+    document.querySelector('.search-container').style.display = 'none';
+  }
+
+  function hideLoader() {
+    document.getElementById('loader').style.display = 'none';
+    document.querySelector('.search-container').style.display = 'block';
+  }
+
+  async function fetchProducts() {
+    showLoader();
+    try {
+      const response = await fetch(DEPLOY_URL, { method: 'POST' });
+      const data = await response.json();
+      allProducts = data;
+      displayProducts(data);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    } finally {
+      hideLoader();
+    }
+  }
+
+  function displayProducts(products) {
+    const productList = document.getElementById('product-list');
+    productList.innerHTML = '';
+
+    if (products.length === 0) {
+      productList.innerHTML = '<p>No products found.</p>';
+      return;
+    }
+
+    products.forEach((product, index) => {
+      const productDiv = document.createElement('div');
+      productDiv.classList.add('product');
+
+      productDiv.innerHTML = `
+        <img src="${product.image}" alt="${product.name}">
+        <div class="product-details">
+          <h4>${product.name}</h4>
+          <p>Price: ₹${product.price}</p>
+          <button class="add-to-cart" data-index="${index}">Add to Cart</button>
+        </div>
+      `;
+
+      productList.appendChild(productDiv);
+    });
+
+    const cartButtons = document.querySelectorAll('.add-to-cart');
+    cartButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        const productIndex = button.getAttribute('data-index');
+        addToCart(products[productIndex]);
+      });
+    });
+  }
+
+  function addToCart(product) {
+    let cart = JSON.parse(localStorage.getItem('cart')) || [];
+    cart.push(product);
+    localStorage.setItem('cart', JSON.stringify(cart));
+    alert(`${product.name} added to cart!`);
+  }
+
+  function setupSearch() {
+    const searchInput = document.getElementById('search-input');
+
+    searchInput.addEventListener('input', () => {
+      const searchTerm = searchInput.value.toLowerCase().replace(/\s+/g, '');
+      const filteredProducts = allProducts.filter(product =>
+        product.name.toLowerCase().replace(/\s+/g, '').includes(searchTerm)
+      );
+      displayProducts(filteredProducts);
+    });
+  }
+
+  fetchProducts();
+  setupSearch();
+</script>
